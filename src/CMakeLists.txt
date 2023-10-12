@@ -169,6 +169,7 @@ endfunction()
 set(C_SOURCES
   bfwreaddirplus2db.c
   dfw.c
+  gufi_changelog_update_index.c
   gufi_dir2index.c
   gufi_dir2trace.c
   gufi_index2dir.c
