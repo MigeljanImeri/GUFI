@@ -107,6 +107,8 @@ int mkpath(char*path, mode_t mode, uid_t uid, gid_t gid);
 
 int dupdir(const char *path, struct stat *stat);
 
+int rm_dir(void * args);
+
 int shortpath(const char *name, char *nameout, char *endname);
 
 /* convert a mode to a human readable string */
