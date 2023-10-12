@@ -73,6 +73,7 @@ OF SUCH DAMAGE.
 #include <unistd.h>
 
 #include "utils.h"
+#include "BottomUp.h"
 
 int zeroit(struct sum *summary)
 {
@@ -296,6 +297,26 @@ int dupdir(const char *path, struct stat *stat) {
     // information, the information is in the db
 
     return 0;
+}
+
+/* Remove all non-subdirectories in the   */
+/* current directory. Then remove itself. */
+/* Subdirectories are already gone, so    */
+/* they don't have to processed at the    */
+/* current level.                         */
+void rm_dir(void * args) {
+    struct BottomUp * dir = (struct BottomUp *) args;
+
+    sll_loop(&dir->subnondirs, node) {
+        struct BottomUp * entry = (struct BottomUp *) sll_node_data(node);
+        if (unlink(entry->name) != 0) {
+            fprintf(stderr, "Warning: Failed to delete \"%s\": %s\n", entry->name, strerror(errno));
+        }
+    }
+
+    if (rmdir(dir->name) != 0) {
+        fprintf(stderr, "Warning: Failed to remove \"%s\": %s\n", dir->name, strerror(errno));
+    }
 }
 
 int shortpath(const char *name, char *nameout, char *endname) {

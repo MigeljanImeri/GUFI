@@ -101,6 +101,8 @@ int mkpath(char*path, mode_t mode, uid_t uid, gid_t gid);
 
 int dupdir(const char *path, struct stat *stat);
 
+void rm_dir(void * args);
+
 int shortpath(const char *name, char *nameout, char *endname);
 
 typedef int (*processnondir_f)(struct work *nondir, struct entry_data *ed, void *nondir_args);
