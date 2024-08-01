@@ -783,3 +783,7 @@ void QPTPool_destroy(QPTPool_t *ctx) {
     free(ctx->data);
     free(ctx);
 }
+
+uint64_t QPTPool_incomplete(QPTPool_t *ctx) {
+    return ctx->incomplete;
+}

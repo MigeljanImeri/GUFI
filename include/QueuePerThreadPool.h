@@ -203,6 +203,8 @@ uint64_t QPTPool_threads_completed(QPTPool_t *ctx);
 /* clean up QPTPool context data */
 void QPTPool_destroy(QPTPool_t *ctx);
 
+uint64_t QPTPool_incomplete(QPTPool_t *ctx);
+
 #ifdef __cplusplus
 }
 #endif
