@@ -159,13 +159,13 @@ struct row {
 };
 
 static struct row *row_init(const int changelog, char *line, const size_t len, 
-		const int dir_op, const long offset) {
+                const int dir_op, const long offset) {
     struct row *row = malloc(sizeof(struct row));
     if (row) {
         //row->changelog = changelog;
         row->line = line; /* takes ownership of line */
         row->len = len;
-	row->dir_op = dir_op;
+        row->dir_op = dir_op;
         row->offset = offset;
         row->entries = 0;
     }
@@ -185,17 +185,17 @@ static int recursive_delete(struct input *in, char *path) {
     struct stat sb;
 
     if (lstat(path, &sb) == -1) {
-	    rc = -1;
-	    return rc;
+            rc = -1;
+            return rc;
     }
     char** root_names = malloc(1 * sizeof(char*));
     root_names[0] = path;
     rc = parallel_bottomup(root_names, 1, in->maxthreads,
-    		sizeof(struct BottomUp),
-    		NULL, rm_dir,
-    		1,
-    		0,
-    		NULL);
+                sizeof(struct BottomUp),
+                NULL, rm_dir,
+                1,
+                0,
+                NULL);
     free(root_names);
     return rc;
 
@@ -260,11 +260,11 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
     temp = realpath(w->line, NULL);
 
     if (!temp) {
-	const int err = errno;
-	fprintf(stderr, "realpath failure: \"%s\": %s (%d)\n",
-		w->line, strerror(err), err);
-	row_destroy(w);
-	return 1;
+        const int err = errno;
+        fprintf(stderr, "realpath failure: \"%s\": %s (%d)\n",
+                w->line, strerror(err), err);
+        row_destroy(w);
+        return 1;
     }
 
     free(w->line);
@@ -274,7 +274,7 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
 
     char index_input[MAXPATH];
     const size_t index_len = SNFORMAT_S(index_input, MAXPATH, 1, 
-		    			in->name.data, in->name.len);
+                                        in->name.data, in->name.len);
     //get basename of index 
     size_t indexbasename_index = trailing_match_index(index_input, index_len, "/", 1);
 
@@ -285,25 +285,25 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
     /* parent of path of directory that exists in indexed system*/
     char topath_parent[MAXPATH];
     const size_t topath_parent_len = SNFORMAT_S(topath_parent, MAXPATH, 1, 
-		    topath, dirname_len(topath, topath_len));
+                    topath, dirname_len(topath, topath_len));
 
     /* path of directory in index*/
     char indexpath[MAXPATH];
     const size_t indexpath_len = SNFORMAT_S(indexpath, MAXPATH, 4,
-		    			in->nameto.data, in->nameto.len,
-					"/", (size_t) 1,
-					index_input + indexbasename_index, index_len - indexbasename_index,
-					topath + in->name.len, strlen(topath + in->name.len));
+                                        in->nameto.data, in->nameto.len,
+                                        "/", (size_t) 1,
+                                        index_input + indexbasename_index, index_len - indexbasename_index,
+                                        topath + in->name.len, strlen(topath + in->name.len));
 
     refstr_t parent = {
-	    .data = topath, 
-	    .len = topath_len
+            .data = topath, 
+            .len = topath_len
     };
 
     if (lstat(topath, &nda.ed.statuso) != 0) {
-	fprintf(stderr, "Could not stat directory \"%s\"\n", topath);		
-	rc = 1;
-	goto cleanup;
+        fprintf(stderr, "Could not stat directory \"%s\"\n", topath);           
+        rc = 1;
+        goto cleanup;
     }
 
     struct work nda_parent;
@@ -312,9 +312,9 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
     struct stat topath_parent_stat;
 
     if (lstat(topath_parent, &topath_parent_stat) != 0) {
-	fprintf(stderr, "Could not stat directory \"%s\"\n", topath_parent);		
-	rc = 1;
-	goto cleanup;
+        fprintf(stderr, "Could not stat directory \"%s\"\n", topath_parent);            
+        rc = 1;
+        goto cleanup;
     }
     
 
@@ -326,34 +326,33 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
     DIR *dir = opendir(topath);
 
     if (!dir) {
-	fprintf(stderr, "In processdir\nCould not open directory \"%s\"\n", topath);		
-	rc = 1;
-	goto cleanup;
+        fprintf(stderr, "Could not open directory \"%s\"\n", topath);           
+        rc = 1;
+        goto cleanup;
     }
 
     /* check if directory exists in index, not necessarily an error if it doesn't.
      * likely caused by moves happening, will be fixed later on.
      * */
     if (opendir(indexpath) == NULL) {
-	const int err = errno;
-	if (err == ENOENT) {
-	    nda.db = NULL;
-	    goto cleanup;
-	}
+        const int err = errno;
+        if (err == ENOENT) {
+            nda.db = NULL;
+            goto cleanup;
+        }
     }
 
     /* create the database name */
     char dbname[MAXPATH];
     SNFORMAT_S(dbname, MAXPATH, 3,
                indexpath, indexpath_len,
-	       "/", (size_t) 1,
-	       DBNAME, DBNAME_LEN);
+               "/", (size_t) 1,
+               DBNAME, DBNAME_LEN);
 
     nda.db = template_to_db(&pa->db, dbname, nda.ed.statuso.st_uid, nda.ed.statuso.st_gid);
 
     if (!nda.db) {
         rc = 1;
-	printf("Going to cleanup\n");
         goto cleanup;
     }
  
@@ -364,24 +363,24 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
     nda.xattr_files_res = NULL;
 
     if (in->process_xattrs) {
-	 nda.xattrs_res = insertdbprep(nda.db, XATTRS_PWD_INSERT);
-	 nda.xattr_files_res = insertdbprep(nda.db, EXTERNAL_DBS_PWD_INSERT);
+         nda.xattrs_res = insertdbprep(nda.db, XATTRS_PWD_INSERT);
+         nda.xattr_files_res = insertdbprep(nda.db, EXTERNAL_DBS_PWD_INSERT);
 
-	 /* external per-user and per-group dbs */
-	 sll_init(&nda.xattr_db_list);
+         /* external per-user and per-group dbs */
+         sll_init(&nda.xattr_db_list);
     }
 
     /* Read through directory on indexed file system and add files to db */
     startdb(nda.db);
     if (nda.db) {
 
-	struct dirent *dir_child = NULL;
+        struct dirent *dir_child = NULL;
         while ((dir_child = readdir(dir))) {
             const size_t len = strlen(dir_child->d_name);
 
             /* skip . and .. and *.db */
-	    const int skip = (trie_search(in->skip, dir_child->d_name, len, NULL) ||
-			    (0 && (len >= 3) && (strncmp(dir_child->d_name + len - 3, ".db", 3) == 0)));
+            const int skip = (trie_search(in->skip, dir_child->d_name, len, NULL) ||
+                            (0 && (len >= 3) && (strncmp(dir_child->d_name + len - 3, ".db", 3) == 0)));
 
             if (skip) {
                 continue;
@@ -431,7 +430,7 @@ static int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
             }
 
             process_nondir(&child, &child_ed, &nda);
-	    nondirs_processed++;
+            nondirs_processed++;
 
             if (in->process_xattrs) {
                 xattrs_cleanup(&child_ed.xattrs);
@@ -515,38 +514,30 @@ static int processdir_recursive(QPTPool_t *ctx, const size_t id, void *data, voi
         goto cleanup;
     }
 
-    /* offset by work->root_len to remove prefix */
-    /*
-    nda.topath_len = SNFORMAT_S(nda.topath, MAXPATH, 3,
-                                in->nameto.data, in->nameto.len,
-                                "/", (size_t) 1,
-                                nda.work->name + nda.work->root_parent.len, nda.work->name_len - nda.work->root_parent.len);
-				*/
-
     size_t index_basename_index = trailing_match_index(in->name.data, in->name.len, "/", 1);
 
     nda.topath_len = SNFORMAT_S(nda.topath, MAXPATH, 4,
-		    		in->nameto.data, in->nameto.len,
-				"/", (size_t) 1,
-				in->name.data + index_basename_index, in->name.len - index_basename_index,
-		   		nda.work->name + in->name.len, strlen(nda.work->name + in->name.len));
+                                in->nameto.data, in->nameto.len,
+                                "/", (size_t) 1,
+                                in->name.data + index_basename_index, in->name.len - index_basename_index,
+                                nda.work->name + in->name.len, strlen(nda.work->name + in->name.len));
 
-
+    
     /* Delete everything under this parent directory and reindex */
     if (nda.work->level == 0) {
-	recursive_delete(in, nda.topath);
+        recursive_delete(in, nda.topath);
     }
 
     if (mkdir(nda.topath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
         const int err = errno;
         if (err != EEXIST) {
-	    fprintf(stderr, "mkdir %s failure: %d %s\n", nda.topath, err, strerror(err));
-	    /* If mkdir fails, likely due to move that happened above it that has deleted everything 
-	     * below it, will eventually reindex this directory through move that occured above this one*/
-	    /*
-	    if (err != ENOENT) {
-	    }
-	    */
+            fprintf(stderr, "mkdir %s failure: %d %s\n", nda.topath, err, strerror(err));
+            /* If mkdir fails, likely due to move that happened above it that has deleted everything 
+             * below it, will eventually reindex this directory through move that occured above this one*/
+            /*
+            if (err != ENOENT) {
+            }
+            */
             rc = 1;
             goto cleanup;
         }
@@ -584,7 +575,7 @@ static int processdir_recursive(QPTPool_t *ctx, const size_t id, void *data, voi
 
     struct descend_counters ctrs;
     startdb(nda.db);
-    descend(ctx, id, pa, in, nda.work, nda.ed.statuso.st_ino, dir, in->skip, 0, 0,
+    descend(ctx, id, pa, in, nda.work, nda.ed.statuso.st_ino, dir, 0,
             processdir_recursive, process_nondir, &nda, &ctrs);
     stopdb(nda.db);
 
@@ -643,37 +634,37 @@ static int reshape_tree(QPTPool_t *ctx, const size_t id, void *data, void *args)
 
     char index[MAXPATH];
     const size_t index_len = SNFORMAT_S(index, MAXPATH, 1, 
-		    			in->name.data, in->name.len);
+                                        in->name.data, in->name.len);
     //get basename of index 
     char *indexbasename = basename(index);
     
     /* path of directory in index*/
     char indexpath[MAXPATH];
     const size_t indexpath_len = SNFORMAT_S(indexpath, MAXPATH, 4,
-		    			in->nameto.data, in->nameto.len,
-					"/", (size_t) 1,
-					indexbasename, (size_t) strlen(indexbasename),
-					w->line + in->name.len, w->len - in->name.len);
+                                        in->nameto.data, in->nameto.len,
+                                        "/", (size_t) 1,
+                                        indexbasename, (size_t) strlen(indexbasename),
+                                        w->line + in->name.len, w->len - in->name.len);
 
     /* delete directory in index as it has been deleted in indexed fs*/
     if (w->dir_op == RMDIR) {
-	    return recursive_delete(in, indexpath);
+            return recursive_delete(in, indexpath);
     }
 
     /* create directory if it doesn't exist in index*/
     if (w->dir_op == MKDIR) {
-	    struct stat st;
-	    st.st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
-	    st.st_uid = geteuid();
-	    st.st_gid = getegid();
+            struct stat st;
+            st.st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
+            st.st_uid = geteuid();
+            st.st_gid = getegid();
 
-	    if (dupdir(indexpath, &st)) {
-		const int err = errno;
-		fprintf(stderr, "Dupdir failure: \"%s\": %s (%d)\n",
-			indexpath, strerror(err), err);
-		row_destroy(w);
-		return 1;
-	    }
+            if (dupdir(indexpath, &st)) {
+                const int err = errno;
+                fprintf(stderr, "Dupdir failure: \"%s\": %s (%d)\n",
+                        indexpath, strerror(err), err);
+                row_destroy(w);
+                return 1;
+            }
     }
 }
 
@@ -739,19 +730,19 @@ static int scout_function(QPTPool_t *ctx, const size_t id, void *data, void *arg
      * then recursively index  */
     while ((len = getline_fd(&line, &size, sa->move_changelog, &offset, GETLINE_DEFAULT_SIZE)) > 0) {
 
-	if (line[0] != '/') {
-		continue;
-	}
+        if (line[0] != '/') {
+                continue;
+        }
     
-	struct work root;
-	if (validate_source(sa->in, line, &root) != 0) {
-	    continue;
-	}
+        struct work root;
+        if (validate_source(sa->in, line, &root) != 0) {
+            continue;
+        }
 
         root.basename_len = root.name_len - root.root_parent.len;
 
         /* put the current line into a new work item */
-	struct work *copy = compress_struct(sa->in->compress, &root, sizeof(root));
+        struct work *copy = compress_struct(sa->in->compress, &root, sizeof(root));
         QPTPool_enqueue(ctx, id, processdir_recursive, copy);
 
         /* have getline allocate a new buffer */
@@ -761,20 +752,18 @@ static int scout_function(QPTPool_t *ctx, const size_t id, void *data, void *arg
     }
 
     printf("waiting for moves\n");
-    while (QPTPool_incomplete(ctx) != 1) {
-	usleep(1);
-    }
+    QPTPool_wait_lte(ctx, 1);
 
     offset = 0;
     dir_op = MKDIR;
     /* create directories */
     while ((len = getline_fd(&line, &size, sa->create_changelog, &offset, GETLINE_DEFAULT_SIZE)) > 0) {
 
-	if (line[0] != '/') {
-		continue;
-	}
+        if (line[0] != '/') {
+                continue;
+        }
 
-	work = row_init(sa->create_changelog, line, len, dir_op, offset);
+        work = row_init(sa->create_changelog, line, len, dir_op, offset);
 
         /* put the current line into a new work item */
         QPTPool_enqueue(ctx, id, reshape_tree, work);
@@ -786,20 +775,18 @@ static int scout_function(QPTPool_t *ctx, const size_t id, void *data, void *arg
     }
 
     printf("waiting for mkdir\n");
-    while (QPTPool_incomplete(ctx) != 1) {
-	usleep(1);
-    }
+    QPTPool_wait_lte(ctx, 1);
 
     offset = 0;
     dir_op = RMDIR;
     /* delete directories */
     while ((len = getline_fd(&line, &size, sa->delete_changelog, &offset, GETLINE_DEFAULT_SIZE)) > 0) {
 
-	if (line[0] != '/') {
-		continue;
-	}
+        if (line[0] != '/') {
+                continue;
+        }
 
-	work = row_init(sa->create_changelog, line, len, dir_op, offset);
+        work = row_init(sa->delete_changelog, line, len, dir_op, offset);
 
         /* put the current line into a new work item */
         QPTPool_enqueue(ctx, id, reshape_tree, work);
@@ -811,17 +798,15 @@ static int scout_function(QPTPool_t *ctx, const size_t id, void *data, void *arg
     }
 
     printf("waiting for removes\n");
-    while (QPTPool_incomplete(ctx) != 1) {
-	usleep(1);
-    }
+    QPTPool_wait_lte(ctx, 1);
 
     offset = 0;
     /* update indexes */
     while ((len = getline_fd(&line, &size, sa->update_changelog, &offset, GETLINE_DEFAULT_SIZE)) > 0) {
 
-    	if (line[0] != '/') {
-		continue;
-	}
+        if (line[0] != '/') {
+                continue;
+        }
 
 
         /* put the current line into a new work item */
@@ -865,9 +850,9 @@ static int scout_function(QPTPool_t *ctx, const size_t id, void *data, void *arg
 }
 
 static void sub_help() {
-   printf("changelog_files	parsed changelog, generated from contrib/gen_changelog.py \n");
-   printf("indexed_fs	root of indexed file system\n");
-   printf("current_index	update GUFI index here\n");
+   printf("changelog_files      parsed changelog, generated from contrib/gen_changelog.py \n");
+   printf("indexed_fs   root of indexed file system\n");
+   printf("current_index        update GUFI index here\n");
    printf("\n");
 }
 
@@ -879,7 +864,7 @@ int main(int argc, char *argv[]) {
 
     struct PoolArgs pa;
     int idx = parse_cmd_line(argc, argv, "hHn:d:M:x" ":q", 6, "move_changelog_file create_changelog_file\
-	delete_changelog_file update_changelog_file indexed_fs current_index", &pa.in);
+        delete_changelog_file update_changelog_file indexed_fs current_index", &pa.in);
     int rc;
     if (pa.in.helped)
         sub_help();
@@ -895,39 +880,39 @@ int main(int argc, char *argv[]) {
     if (move_changelog < 0) {
         const int err = errno;
         fprintf(stderr, "Could not open \"%s\": %s (%d)\n", argv[idx], strerror(err), err);
-	rc = err;
-	goto close_move_changelog;
+        rc = err;
+        goto close_move_changelog;
     }
 
     int create_changelog = open(argv[idx + 1], O_RDONLY);
     if (create_changelog < 0) {
         const int err = errno;
         fprintf(stderr, "Could not open \"%s\": %s (%d)\n", argv[idx + 1], strerror(err), err);
-	rc = err;
-	goto close_create_changelog;
+        rc = err;
+        goto close_create_changelog;
     }
 
     int delete_changelog = open(argv[idx + 2], O_RDONLY);
     if (delete_changelog < 0) {
         const int err = errno;
         fprintf(stderr, "Could not open \"%s\": %s (%d)\n", argv[idx + 2], strerror(err), err);
-	rc = err;
-	goto close_delete_changelog;
+        rc = err;
+        goto close_delete_changelog;
     }
 
     int update_changelog = open(argv[idx + 3], O_RDONLY);
     if (update_changelog < 0) {
         const int err = errno;
         fprintf(stderr, "Could not open \"%s\": %s (%d)\n", argv[idx + 3], strerror(err), err);
-	rc = err;
-	goto close_update_changelog;
+        rc = err;
+        goto close_update_changelog;
     }
 
     init_template_db(&pa.db);
     if (create_dbdb_template(&pa.db) != 0) {
         fprintf(stderr, "Could not create template file\n");
-	rc = -1;
-	goto close_update_changelog;
+        rc = -1;
+        goto close_update_changelog;
     }
 
     struct stat st;
@@ -937,14 +922,14 @@ int main(int argc, char *argv[]) {
 
     if (dupdir(pa.in.nameto.data, &st)) {
         fprintf(stderr, "Could not create directory %s\n", pa.in.nameto.data);
-	rc = -1;
-	goto close_update_changelog;
+        rc = -1;
+        goto close_update_changelog;
     }
 
     /*
     if (setup_directory_skip(&pa.skip, pa.in.skip->data) != 0) {
         rc = EXIT_FAILURE;
-	goto close_update_changelog;
+        goto close_update_changelog;
     }
     */
 
@@ -954,15 +939,15 @@ int main(int argc, char *argv[]) {
      * so that when querying "${dst}", no error is printed
      */
     if (create_empty_dbdb(&pa.db, &pa.in.nameto, geteuid(), getegid()) != 0) {
-	rc = -1;
-	goto close_update_changelog;
+        rc = -1;
+        goto close_update_changelog;
     }
 
     init_template_db(&pa.xattr);
     if (create_xattrs_template(&pa.xattr) != 0) {
         fprintf(stderr, "Could not create xattr template file\n");
-	rc = -1;
-	goto close_db_template;
+        rc = -1;
+        goto close_db_template;
     }
 
     const uint64_t queue_depth = pa.in.target_memory_footprint / sizeof(struct work) / pa.in.maxthreads;
@@ -970,8 +955,8 @@ int main(int argc, char *argv[]) {
     if (QPTPool_start(pool) != 0) {
         fprintf(stderr, "Error: Failed to start thread pool\n");
         QPTPool_destroy(pool);
-	rc = -1;
-	goto close_db_template;
+        rc = -1;
+        goto close_db_template;
     }
 
     fprintf(stdout, "Updating GUFI Index %s with %zu threads\n", pa.in.nameto.data, pa.in.maxthreads);
@@ -1003,7 +988,7 @@ int main(int argc, char *argv[]) {
     /* scout_function pushes more work into the queue */
     QPTPool_enqueue(pool, 0, scout_function, sa);
 
-    QPTPool_wait(pool);
+    QPTPool_stop(pool);
 
     clock_gettime(CLOCK_MONOTONIC, &main_func.end);
     const long double processtime = sec(nsec(&main_func));
@@ -1016,7 +1001,7 @@ int main(int argc, char *argv[]) {
 
     files = 0;
     for (size_t i = 0; i < pa.in.maxthreads; i++) {
-	    files += pa.total_files[i];
+            files += pa.total_files[i];
     }
 
     fprintf(stdout, "Total Dirs:          %" PRIu64 "\n", dirs);
