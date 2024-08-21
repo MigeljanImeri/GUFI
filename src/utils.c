@@ -315,16 +315,16 @@ int rm_dir(void * args) {
     sll_loop(&dir->subnondirs, node) {
         struct BottomUp * entry = (struct BottomUp *) sll_node_data(node);
         if (unlink(entry->name) != 0) {
-	    const int err = errno;
-            fprintf(stderr, "Warning: Failed to delete \"%s\": %s\n", entry->name, strerror(errno));
-	    rc = 1;
+            const int err = errno;
+            fprintf(stderr, "Warning: Failed to delete \"%s\": %s\n", entry->name, strerror(err));
+            rc = 1;
         }
     }
 
     if (rmdir(dir->name) != 0) {
-	const int err = errno;
-        fprintf(stderr, "Warning: Failed to remove \"%s\": %s\n", dir->name, strerror(errno));
-	return 1;
+        const int err = errno;
+        fprintf(stderr, "Warning: Failed to remove \"%s\": %s\n", dir->name, strerror(err));
+        return 1;
     }
 
     return rc;
@@ -476,6 +476,9 @@ int descend(QPTPool_t *ctx, const size_t id, void *args,
                 default:
                     /* some filesystems don't support d_type - fall back to calling lstat */
                     if (lstat(child.name, &child_ed.statuso) != 0) {
+                        const int err = errno;
+                        fprintf(stderr, "Could not lstat %s: %s (%d)\n",
+                                work->name, strerror(err), err);
                         continue;
                     }
 
@@ -485,34 +488,36 @@ int descend(QPTPool_t *ctx, const size_t id, void *args,
 
             /* push subdirectories onto the queue */
             if (S_ISDIR(child_ed.statuso.st_mode)) {
-                child_ed.type = 'd';
+                if (processdir) {
+                    child_ed.type = 'd';
 
-                if (!in->subdir_limit || (ctrs.dirs < in->subdir_limit)) {
-                    struct work *copy = compress_struct(in->compress, &child, sizeof(child));
-                    QPTPool_enqueue(ctx, id, processdir, copy);
-                }
-                else {
-                    /*
-                     * If this directory has too many subdirectories,
-                     * process the current subdirectory here instead
-                     * of enqueuing it. This only allows for one
-                     * subdirectory work item to be allocated at a
-                     * time instead of all of them, reducing overall
-                     * memory usage. This branch is only applied at
-                     * this level, so small subdirectories will still
-                     * enqueue work, and large subdirectories will
-                     * still enqueue some work and process the
-                     * remaining in-situ.
-                     *
-                     * Return value should probably be used.
-                     */
-                    child.recursion_level = recursion_level;
-                    processdir(ctx, id, &child, args);
-                    ctrs.dirs_insitu++;
+                    if (!in->subdir_limit || (ctrs.dirs < in->subdir_limit)) {
+                        struct work *copy = compress_struct(in->compress, &child, sizeof(child));
+                        QPTPool_enqueue(ctx, id, processdir, copy);
+                    }
+                    else {
+                        /*
+                         * If this directory has too many subdirectories,
+                         * process the current subdirectory here instead
+                         * of enqueuing it. This only allows for one
+                         * subdirectory work item to be allocated at a
+                         * time instead of all of them, reducing overall
+                         * memory usage. This branch is only applied at
+                         * this level, so small subdirectories will still
+                         * enqueue work, and large subdirectories will
+                         * still enqueue some work and process the
+                         * remaining in-situ.
+                         *
+                         * Return value should probably be used.
+                         */
+                        child.recursion_level = recursion_level;
+                        processdir(ctx, id, &child, args);
+                        ctrs.dirs_insitu++;
+                    }
+
                 }
 
                 ctrs.dirs++;
-
                 continue;
             }
             /* non directories */
