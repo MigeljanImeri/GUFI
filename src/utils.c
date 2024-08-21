@@ -325,16 +325,16 @@ int rm_dir(void * args) {
     sll_loop(&dir->subnondirs, node) {
         struct BottomUp * entry = (struct BottomUp *) sll_node_data(node);
         if (unlink(entry->name) != 0) {
-	    const int err = errno;
-            fprintf(stderr, "Warning: Failed to delete \"%s\": %s\n", entry->name, strerror(errno));
-	    rc = 1;
+            const int err = errno;
+            fprintf(stderr, "Warning: Failed to delete \"%s\": %s\n", entry->name, strerror(err));
+            rc = 1;
         }
     }
 
     if (rmdir(dir->name) != 0) {
-	const int err = errno;
-        fprintf(stderr, "Warning: Failed to remove \"%s\": %s\n", dir->name, strerror(errno));
-	return 1;
+        const int err = errno;
+        fprintf(stderr, "Warning: Failed to remove \"%s\": %s\n", dir->name, strerror(err));
+        return 1;
     }
 
     return rc;
