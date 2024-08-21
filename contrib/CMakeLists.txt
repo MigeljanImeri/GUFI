@@ -75,6 +75,17 @@ if (CMAKE_CXX_COMPILER)
   add_executable(verifytrace verifytrace.cpp)
 endif()
 
+pkg_search_module(LUSTRE lustre)
+if (LUSTRE_FOUND)
+    message(STATUS "Lustre Include: ${LUSTRE_INCLUDE_DIRS}")
+    message(STATUS "Lustre Libraries: ${LUSTRE_LIBRARIES}")
+    add_executable(gen_changelog gen_changelog.cpp) 
+    target_include_directories(gen_changelog PUBLIC ${LUSTRE_INCLUDE_DIRS})
+    target_link_libraries(gen_changelog ${COMMON_LIBRARIES} ${LUSTRE_LIBRARIES})
+else()
+    message(STATUS "Lustre not found")
+endif()
+
 # build C/C++ sources that depend on libGUFI
 foreach(SOURCE ${CONTRIB_SOURCES})
   # NAME_WE removes the directory and the longest extension
@@ -82,6 +93,8 @@ foreach(SOURCE ${CONTRIB_SOURCES})
   add_executable("${TARGET}" "${SOURCE}")
   target_link_libraries("${TARGET}" ${COMMON_LIBRARIES})
 endforeach()
+
+
 
 set(CHECKSTYLE)
 
