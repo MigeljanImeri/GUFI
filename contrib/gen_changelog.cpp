@@ -354,10 +354,14 @@ int process_lines(QPTPool_t *ctx, const std::size_t id, void *data, void *args) 
 }
 
 int main(int argc, char *argv[]) {
-    /* TODO: Parse argv */
-    const std::size_t count = 32;
-    const std::string changelog_name = "/home/mimeri/repos/scripts/changelog";
-    const std::string mnt = "/mnt/lustre";
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " changelog_file lustre_mnt [threads]" << std::endl;
+        return 1;
+    }
+
+    const std::string changelog_name = argv[1];
+    //not checking mount point
+    const std::string mnt = argv[2];
 
     int changelog = open(changelog_name.c_str(), O_RDONLY);
     if (changelog < 0) {
@@ -376,18 +380,26 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    struct PoolArgs pa(count, mnt, changelog);
+    std::size_t threads = 1;
+    if (argc == 4) {
+        if (!(std::stringstream(argv[3]) >> threads)) {
+            std::cerr << "Error: Bad thread count: " << argv[3] << std::endl;
+            return 1;
+        }
+    }
 
-    QPTPool_t *pool = QPTPool_init(count, &pa);
+    struct PoolArgs pa(threads, mnt, changelog);
+
+    QPTPool_t *pool = QPTPool_init(threads, &pa);
     if (QPTPool_start(pool) != 0) {
-        fprintf(stderr, "Error: Failed to start thread pool with %zu threads\n", count);
+        fprintf(stderr, "Error: Failed to start thread pool with %zu threads\n", threads);
         QPTPool_destroy(pool);
         close(changelog);
         return 1;
     }
 
     /* approximate number of bytes per chunk */
-    const std::size_t jump = (st.st_size / count) + !!(st.st_size % count);
+    const std::size_t jump = (st.st_size / threads) + !!(st.st_size % threads);
 
     off_t start = 0;
     off_t end = start + jump;
@@ -426,9 +438,9 @@ int main(int argc, char *argv[]) {
 
     const std::vector<std::size_t> merge_sizes = pa.pfids_merged.size();
 
-    for (std::size_t i = 0; i < count; i++) {
+    for (std::size_t i = 0; i < threads; i++) {
         std::vector<Range> *ranges = new std::vector<Range>(4);
-        assign_ranges(*ranges, merge_sizes, count, i);
+        assign_ranges(*ranges, merge_sizes, threads, i);
 
         QPTPool_enqueue(pool, 0, process_pfids, ranges);
     }
