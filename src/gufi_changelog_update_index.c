@@ -69,6 +69,7 @@ OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <string.h>
 
 #include "QueuePerThreadPool.h"
 #include "bf.h"
@@ -441,7 +442,7 @@ static int reshape_tree(QPTPool_t *ctx, const size_t id, void *data, void *args)
 
 static int process_renames(QPTPool_t *ctx, const size_t id,
                            const char *changelog_name, const enum DirOp op,
-                           QPTPoolFunc_t func, const char *wait_msg) {
+                           QPTPool_f func, const char *wait_msg) {
     (void) op;
 
     const int fd = open(changelog_name, O_RDONLY);
@@ -499,7 +500,7 @@ static int process_renames(QPTPool_t *ctx, const size_t id,
 /* need better function name */
 static int process_others(QPTPool_t *ctx, const size_t id,
                           const char *changelog_name, const enum DirOp op,
-                          QPTPoolFunc_t func, const char *wait_msg) {
+                          QPTPool_f func, const char *wait_msg) {
     const int fd = open(changelog_name, O_RDONLY);
     if (fd < 0) {
         const int err = errno;
